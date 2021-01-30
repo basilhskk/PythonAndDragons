@@ -11,7 +11,7 @@ import tempfile
 import zipfile
 import sys
 import fileinput
-
+import shutil
 
 from logger import TerminalColors,LoggingFormater
 
@@ -49,7 +49,9 @@ def arg_parser():
 
     parser = argparse.ArgumentParser(description="Pythons and Dragons Pyinstaller static analysis evasion tool ",epilog=usage_text,formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument('-s','--string', type=str, help='String to replace detectable strings (eg. pyi pyinstaller etc.) (Default: Random)',) # TODO
+    parser.add_argument('-s','--string', type=str, help='String to replace detectable strings (eg. pyi pyinstaller etc.) (Default: Random)') # TODO
+
+    parser.add_argument('-i','--icon', type=str, help='Icon path for the executable (Default: Random)') # TODO
 
     args = parser.parse_args()
 
@@ -151,6 +153,12 @@ def rename_pyi(replace_strings):
     loop_rename_strings(files,"pyi",replace_strings.pyinstaller_string)
 
 
+    iconFolder = os.path.join(folder,"Pyinstaller","bootloader","images")
+
+    logger.info("Chaning icons")
+
+    replace_icon(iconFolder)
+
     # compilation fails in windows 
     remove_strnlen = "strnlen(const char *str, size_t n)"
 
@@ -162,12 +170,21 @@ def rename_pyi(replace_strings):
 
     loop_rename_files(files,"pyi",replace_strings.pyinstaller_string)
     
-
+    files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(folder) for f in filenames ]
 
     
+
+def replace_icon(folder):
+    files = [os.path.join(folder,f) for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
+    for file in files:
+        os.remove(file)
     
-    # loop_renamefiles
-            
+    cwd = os.path.dirname(os.path.realpath(__file__))
+
+    shutil.copy(os.path.join(cwd,"icon","dragon.ico"), os.path.join(folder,"icon-console.ico"))
+    shutil.copy(os.path.join(cwd,"icon","dragon.ico"), os.path.join(folder,"icon-windowed.ico"))
+
+                   
 
 if __name__ == '__main__':
     
@@ -176,6 +193,7 @@ if __name__ == '__main__':
     args = arg_parser()
 
     user_string = args.string
+    icon = args.icon
 
     if not user_string:
         logger.info("Generating random strings")
