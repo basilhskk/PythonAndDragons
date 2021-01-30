@@ -23,6 +23,7 @@ def is_running_in_powershell():
     return False
 
 
+
 def banner():
 
     print(TermColors.CYAN+"  _____       _   _                            _____                                  "+TermColors.ENDC)
