@@ -10,7 +10,8 @@ import requests
 import tempfile
 import zipfile
 import sys
-import glob 
+import fileinput
+
 
 from logger import TerminalColors,LoggingFormater
 
@@ -42,15 +43,13 @@ def arg_parser():
 
     usage_text = '''usage:
 
-    python3 PnD.py C:/path/to/Pyinstaller/Directory # full path
+    python3 PnD.py
     ./PnD.py ../path/to/Pyinstaller/ # relative ppath
     '''
 
     parser = argparse.ArgumentParser(description="Pythons and Dragons Pyinstaller static analysis evasion tool ",epilog=usage_text,formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument('-d','--download',action='store_true',help='Version of Pyinstaller that you want to make stealth (Default and RECOMMENDED :4.0)') # TODO
     parser.add_argument('-s','--string', type=str, help='String to replace detectable strings (eg. pyi pyinstaller etc.) (Default: Random)',) # TODO
-    parser.add_argument('path', help='Path to Pyinstaller that you want to make stealth')
 
     args = parser.parse_args()
 
@@ -93,14 +92,45 @@ def download_pyi():
     
     logger.info("Unzipping pyinstaller")    
 
-    # try:
-    #     with zipfile.ZipFile(pyi, 'r') as zip_ref:
-    #         zip_ref.extractall(os.path.join(tempfile.gettempdir(), "pyinstaller"))
-    # except Exception as e:
-    #     logger.error("Unzipping pyinstaller failed")    
-    #     return 1
+    try:
+        with zipfile.ZipFile(pyi, 'r') as zip_ref:
+            zip_ref.extractall(os.path.join(tempfile.gettempdir(), "pyinstaller"))
+    except Exception as e:
+        logger.error("Unzipping pyinstaller failed")    
+        return 1
 
-def rename_pyi():
+
+def loop_rename_strings(files,replace,replacement_string):
+    for file in files:
+        try:
+            if os.path.splitext(file)[1] in [".py",".c",".h"] :
+                with open(file,'r', encoding="utf8") as f:
+                    if replace in f.read():
+                        f.close()
+
+                        with fileinput.FileInput(file, inplace=True) as fw:
+                            for line in fw:
+                                print(line.replace(replace, replacement_string), end='')
+        except Exception as e:
+            logger.warning(e)
+            print(file)
+     
+
+def loop_rename_files(files,replace,replacement_string):
+    for file in files:
+        filename = os.path.basename(file)
+        if os.path.splitext(file)[1] in [".py",".c",".h"] :
+            if replace in filename:
+                try:
+                    folder = os.path.dirname(file)
+                    filename2 = filename.replace(replace,replacement_string)
+                    new_file = os.path.join(folder,filename2)
+                    os.rename(file, new_file) 
+                except Exception as e: 
+                    logger.warning(e)
+
+
+def rename_pyi(replace_strings):
 
     logger.info("Renaming Pyinstaller AV detectable strings")
     
@@ -114,21 +144,30 @@ def rename_pyi():
 
     # get all files in pyinstaller directory
     files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(folder) for f in filenames ]
-    print(len(files))
-    counter = 0
-    for file in files:
-        try:
-            if os.path.splitext(files) not in ["py","c"] :
-                print( os.path.splitext(files))
-                with open(file,'r') as f:
-                    if 'pyi_' in f.read():
-                        counter = counter + 1
-                        print(counter)
-        except Exception as e:
-            logger.error(e)
-            print(file)
-            
 
+    # we are looping 3 times because we need to keep this hierarchy
+    loop_rename_strings(files,"pyi_",replace_strings.pyi_string+"_")
+    loop_rename_strings(files,"Pyinstaller",replace_strings.pyinstaller_string)
+    loop_rename_strings(files,"pyi",replace_strings.pyinstaller_string)
+
+
+    # compilation fails in windows 
+    remove_strnlen = "strnlen(const char *str, size_t n)"
+
+    loop_rename_strings(files,remove_strnlen,"strnlen21321(const char *str, size_t n)")
+
+
+    # get files again after renaming
+    files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(folder) for f in filenames ]
+
+    loop_rename_files(files,"pyi",replace_strings.pyinstaller_string)
+    
+
+
+    
+    
+    # loop_renamefiles
+            
 
 if __name__ == '__main__':
     
@@ -136,8 +175,6 @@ if __name__ == '__main__':
 
     args = arg_parser()
 
-    path = args.path
-    download = args.download  
     user_string = args.string
 
     if not user_string:
@@ -150,7 +187,7 @@ if __name__ == '__main__':
         logger.critical("Unzip failed can't continue ")
         sys.exit()    
 
-    err = rename_pyi()
+    err = rename_pyi(replace_strings)
     if err:
         logger.critical("Renaming failed can't continue ")
         sys.exit()  
