@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Pyinstaller Customizer Tool as described in Python and Dragons Paper
+# Pyinstaller Customizer Tool as described in Pythons and Dragons Paper
 import argparse
 import psutil
 import os
@@ -35,22 +35,25 @@ def banner():
     print(TermColors.CYAN+"        |___/                                                   |___/                 "+TermColors.ENDC)
 
     
-def argParser():
+def arg_parser():
     banner()
-    parser = argparse.ArgumentParser(description="test"+TermColors.ENDC)
-    parser.add_argument('integers', metavar='N', type=int, nargs='+',
-                        help='an integer for the accumulator')
-    parser.add_argument('--sum', dest='accumulate', action='store_const',
-                        const=sum, default=max,
-                        help='sum the integers (default: find the max)')
+
+    usage_text = '''usage:
+
+    python3 PnD.py C:/path/to/Pyinstaller/Directory # full path
+    ./PnD.py ../path/to/Pyinstaller/ # relative ppath
+    '''
+
+    parser = argparse.ArgumentParser(description="Pythons and Dragons Pyinstaller static analysis evasion tool ",epilog=usage_text,formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    parser.add_argument('-d','--download', help='Enter version of Pyinstaller that you want to make stealth Default and RECOMMENDED :4.0',default="0") # TODO
+
+    parser.add_argument('direcoty', help='Directory of Pyinstaller that you want to make stealth')
 
     args = parser.parse_args()
-    # print(args.accumulate(args.integers))
+
     return args
 
 
 if __name__ == '__main__':
-    isRunnigInPowershell()
-
-    args = argParser()
-    isRunnigInPowershell()
+    args = arg_parser()
