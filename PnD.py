@@ -132,6 +132,38 @@ def loop_rename_files(files,replace,replacement_string):
                     logger.warning(e)
 
 
+def replace_icon(folder):
+    files = [os.path.join(folder,f) for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
+    for file in files:
+        os.remove(file)
+    
+    cwd = os.path.dirname(os.path.realpath(__file__))
+
+    shutil.copy(os.path.join(cwd,"icon","dragon.ico"), os.path.join(folder,"icon-console.ico"))
+    shutil.copy(os.path.join(cwd,"icon","dragon.ico"), os.path.join(folder,"icon-windowed.ico"))
+   
+
+def rename_folder(folder,replacement):
+
+    os.rename(os.path.join(folder,"Pyinstaller"),os.path.join(folder,replacement))
+    
+
+def add_link_flags(folder):
+
+    wscript = os.path.join(folder,"bootloader","wscript")
+    replace       = "            ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')"
+    
+    replacement = """            ctx.env.append_value('LINKFLAGS', '/MACHINE:X64')
+            ctx.env.append_value('LINKFLAGS', '/BASE:0x00400000')
+            ctx.env.append_value('LINKFLAGS', '/DYNAMICBASE:NO')
+            ctx.env.append_value('LINKFLAGS', '/VERSION:5.2')
+            ctx.env.append_value('LINKFLAGS', '/RELEASE')
+    """
+    with fileinput.FileInput(wscript, inplace=True) as fw:
+        for line in fw:
+                    print(line.replace(replace, replacement), end='')
+    
+
 def rename_pyi(replace_strings):
 
     logger.info("Renaming Pyinstaller AV detectable strings")
@@ -150,8 +182,12 @@ def rename_pyi(replace_strings):
     # we are looping 3 times because we need to keep this hierarchy
     loop_rename_strings(files,"pyi_",replace_strings.pyi_string+"_")
     loop_rename_strings(files,"Pyinstaller",replace_strings.pyinstaller_string)
-    loop_rename_strings(files,"pyi",replace_strings.pyinstaller_string)
+    loop_rename_strings(files,"pyi",replace_strings.pyi_string)
 
+    # compilation fails in windows 
+    remove_strnlen = "strnlen(const char *str, size_t n)"
+
+    loop_rename_strings(files,remove_strnlen,"strnlen21321(const char *str, size_t n)")
 
     iconFolder = os.path.join(folder,"Pyinstaller","bootloader","images")
 
@@ -159,32 +195,20 @@ def rename_pyi(replace_strings):
 
     replace_icon(iconFolder)
 
-    # compilation fails in windows 
-    remove_strnlen = "strnlen(const char *str, size_t n)"
+    add_link_flags(folder)
 
-    loop_rename_strings(files,remove_strnlen,"strnlen21321(const char *str, size_t n)")
-
+    logger.info("Renaming Pyinstaller file names")
 
     # get files again after renaming
     files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(folder) for f in filenames ]
 
-    loop_rename_files(files,"pyi",replace_strings.pyinstaller_string)
+    loop_rename_files(files,"pyi",replace_strings.pyi_string)
     
     files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(folder) for f in filenames ]
 
+    rename_folder(folder,replace_strings.pyinstaller_string)
     
 
-def replace_icon(folder):
-    files = [os.path.join(folder,f) for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
-    for file in files:
-        os.remove(file)
-    
-    cwd = os.path.dirname(os.path.realpath(__file__))
-
-    shutil.copy(os.path.join(cwd,"icon","dragon.ico"), os.path.join(folder,"icon-console.ico"))
-    shutil.copy(os.path.join(cwd,"icon","dragon.ico"), os.path.join(folder,"icon-windowed.ico"))
-
-                   
 
 if __name__ == '__main__':
     
