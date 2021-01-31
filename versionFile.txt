@@ -30,11 +30,11 @@ StringFileInfo(
   StringTable(
     u'040904B0',
     [StringStruct(u'CompanyName', u'Apache Software Foundation'),
-    StringStruct(u'FileDescription', u'sssasdsssas'),
+    StringStruct(u'FileDescription', u'asdasd'),
     StringStruct(u'FileVersion', u'1.9.7'),
     StringStruct(u'InternalName', u'ssss'),
     StringStruct(u'LegalCopyright', u'Copyright (c) The Apache Software Foundation'),
-    StringStruct(u'OriginalFilename', u'1.exe'),
+    StringStruct(u'OriginalFilename', u'test.exe'),
     StringStruct(u'ProductName', u'Subversion123'),
     StringStruct(u'ProductVersion', u'1.9.7 (r18003921)')])
   ]), 
