@@ -88,12 +88,12 @@ def download_pyi():
     url = "https://github.com/pyinstaller/pyinstaller/archive/v4.0.zip"
     pyi = os.path.join(tempfile.gettempdir(), "pyi.zip")
 
-    # r = requests.get(url,stream=True)
-    # logger.info("Downloading pyinstaller v4.0")    
+    r = requests.get(url,stream=True)
+    logger.info("Downloading pyinstaller v4.0")    
 
-    # with open(pyi, 'wb') as fd:
-    #     for chunk in r.iter_content(chunk_size=128):
-    #         fd.write(chunk)
+    with open(pyi, 'wb') as fd:
+        for chunk in r.iter_content(chunk_size=128):
+            fd.write(chunk)
     
     logger.info("Trying to remove old content")    
     try:
@@ -187,6 +187,7 @@ def remove_folder(folder):
         shutil.rmtree(folder)
     except Exception as e :
         logger.warning(e)
+
 
 def make_setup(folder):
     try:
@@ -291,7 +292,3 @@ if __name__ == '__main__':
     shutil.copytree(folder,os.path.join(user_directory,"pyinstaller"))
 
     logger.info("Pyinstaller is now stealthier")
-
-
-
-    # c:\users\vasilis\appdata\local\programs\python\python37\lib\site-packages\pyinstaller-4.0+19fb799a11-py3.7.egg\PyInstaller\hooks\rthooks\pyi_rth_django.py
