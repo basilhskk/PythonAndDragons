@@ -12,6 +12,7 @@ import zipfile
 import sys
 import fileinput
 import shutil
+from pathlib import Path
 
 from logger import TerminalColors,LoggingFormater
 
@@ -43,15 +44,17 @@ def arg_parser():
 
     usage_text = '''usage:
 
-    python3 PnD.py
+    python3 PnD.py /path/to/pyi
     ./PnD.py ../path/to/Pyinstaller/ # relative ppath
     '''
 
     parser = argparse.ArgumentParser(description="Pythons and Dragons Pyinstaller static analysis evasion tool ",epilog=usage_text,formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument('-s','--string', type=str, help='String to replace detectable strings (eg. pyi pyinstaller etc.) (Default: Random)') # TODO
+    parser.add_argument('-s','--string', type=str, help='String to replace detectable strings (eg. pyi pyinstaller etc.) (Default: Random)')
 
-    parser.add_argument('-i','--icon', type=str, help='Icon path for the executable (Default: Random)') # TODO
+    parser.add_argument('-i','--icon', type=str, help='Icon path for the executable (Default: Random)')
+    
+    parser.add_argument('-p','--path', type=str, help='Where to create pyinstaller directory (Default: home of current user)')
 
     args = parser.parse_args()
 
@@ -85,18 +88,19 @@ def download_pyi():
     url = "https://github.com/pyinstaller/pyinstaller/archive/v4.0.zip"
     pyi = os.path.join(tempfile.gettempdir(), "pyi.zip")
 
-    r = requests.get(url,stream=True)
-    logger.info("Downloading pyinstaller v4.0")    
+    # r = requests.get(url,stream=True)
+    # logger.info("Downloading pyinstaller v4.0")    
 
-    with open(pyi, 'wb') as fd:
-        for chunk in r.iter_content(chunk_size=128):
-            fd.write(chunk)
+    # with open(pyi, 'wb') as fd:
+    #     for chunk in r.iter_content(chunk_size=128):
+    #         fd.write(chunk)
     
     logger.info("Trying to remove old content")    
     try:
-        os.remove(os.path.join(tempfile.gettempdir(), "pyinstaller"))
+        shutil.rmtree(os.path.join(tempfile.gettempdir(), "pyinstaller","pyinstaller-4.0"))
     except Exception as e :
         logger.warning(e)
+
     logger.info("Unzipping pyinstaller")    
 
     try:
@@ -110,14 +114,14 @@ def download_pyi():
 def loop_rename_strings(files,replace,replacement_string):
     for file in files:
         try:
-            if os.path.splitext(file)[1] in [".py",".c",".h"] :
-                with open(file,'r', encoding="utf8") as f:
-                    if replace in f.read():
-                        f.close()
+            # if os.path.splitext(file)[1] in [".py",".c",".h"] :
+            with open(file,'r', encoding="utf8") as f:
+                if replace in f.read():
+                    f.close()
 
-                        with fileinput.FileInput(file, inplace=True) as fw:
-                            for line in fw:
-                                print(line.replace(replace, replacement_string), end='')
+                    with fileinput.FileInput(file, inplace=True) as fw:
+                        for line in fw:
+                            print(line.replace(replace, replacement_string), end='')
         except Exception as e:
             logger.warning(e)
             print(file)
@@ -126,15 +130,15 @@ def loop_rename_strings(files,replace,replacement_string):
 def loop_rename_files(files,replace,replacement_string):
     for file in files:
         filename = os.path.basename(file)
-        if os.path.splitext(file)[1] in [".py",".c",".h"] :
-            if replace in filename:
-                try:
-                    folder = os.path.dirname(file)
-                    filename2 = filename.replace(replace,replacement_string)
-                    new_file = os.path.join(folder,filename2)
-                    os.rename(file, new_file) 
-                except Exception as e: 
-                    logger.warning(e)
+        # if os.path.splitext(file)[1] in [".py",".c",".h",".dat"] :
+        if replace in filename:
+            try:
+                folder = os.path.dirname(file)
+                filename2 = filename.replace(replace,replacement_string)
+                new_file = os.path.join(folder,filename2)
+                os.rename(file, new_file) 
+            except Exception as e: 
+                logger.warning(e)
 
 
 def replace_icon(folder):
@@ -176,11 +180,20 @@ def build_bootloader(folder):
     
     os.system("cd "+bootloader_folder+"&python waf all")
 
+
+def remove_folder(folder):
+    logger.info("Trying to remove folder "+folder)    
+    try:
+        shutil.rmtree(folder)
+    except Exception as e :
+        logger.warning(e)
+
 def make_setup(folder):
     try:
         os.system("cd "+folder+"&python setup.py install")
     except Exception as e:
         logger.error(e)
+
 
 def rename_pyi(replace_strings):
 
@@ -199,8 +212,18 @@ def rename_pyi(replace_strings):
 
     # we are looping 3 times because we need to keep this hierarchy
     loop_rename_strings(files,"pyi_",replace_strings.pyi_string+"_")
-    loop_rename_strings(files,"Pyinstaller",replace_strings.pyinstaller_string)
-    loop_rename_strings(files,"pyi",replace_strings.pyi_string)
+    loop_rename_strings(files,"PYI_",replace_strings.pyi_string.upper()+"_")
+    loop_rename_strings(files,"pyi-",replace_strings.pyi_string+"-")
+    loop_rename_strings(files,"PYI-",replace_strings.pyi_string.upper()+"-")
+
+    loop_rename_strings(files,"Pyinstaller: ",replace_strings.pyinstaller_string+":")
+    loop_rename_strings(files,"pyinstaller: ",replace_strings.pyinstaller_string+":")
+    loop_rename_strings(files,"Pyinstaller:",replace_strings.pyinstaller_string+":")
+    loop_rename_strings(files,"pyinstaller:",replace_strings.pyinstaller_string+":")
+    loop_rename_strings(files,"PyInstaller:",replace_strings.pyinstaller_string+":")
+    loop_rename_strings(files,"PyInstaller:",replace_strings.pyinstaller_string+":")
+
+    # loop_rename_strings(files,"pyi",replace_strings.pyi_string)
 
     # compilation fails in windows 
     remove_strnlen = "strnlen(const char *str, size_t n)"
@@ -220,15 +243,16 @@ def rename_pyi(replace_strings):
     # get files again after renaming
     files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(folder) for f in filenames ]
 
-    loop_rename_files(files,"pyi",replace_strings.pyi_string)
-    
+    loop_rename_files(files,"pyi_",replace_strings.pyi_string+"_")
+    loop_rename_files(files,"pyi-",replace_strings.pyi_string+"-")
+
     files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(folder) for f in filenames ]
+    
+    remove_folder(os.path.join(folder,"Pyinstaller","bootloader","Windows-32bit"))
+    remove_folder(os.path.join(folder,"Pyinstaller","bootloader","Windows-64bit"))
 
     build_bootloader(folder)
     
-    rename_folder(folder,replace_strings.pyinstaller_string)
-
-    make_setup(folder)
 
 if __name__ == '__main__':
     
@@ -238,6 +262,7 @@ if __name__ == '__main__':
 
     user_string = args.string
     icon = args.icon
+    path =args.path
 
     if not user_string:
         logger.info("Generating random strings")
@@ -253,3 +278,20 @@ if __name__ == '__main__':
     if err:
         logger.critical("Renaming failed can't continue ")
         sys.exit()  
+
+    user_directory = str(Path.home())
+
+    folder = os.path.join(tempfile.gettempdir(), "pyinstaller")
+
+    logger.info("Removing old pyinstaller")
+    remove_folder(os.path.join(user_directory,"pyinstaller"))
+
+    logger.info("Moving new pyinstaller to "+os.path.join(user_directory,"pyinstaller"))
+
+    shutil.copytree(folder,os.path.join(user_directory,"pyinstaller"))
+
+    logger.info("Pyinstaller is now stealthier")
+
+
+
+    # c:\users\vasilis\appdata\local\programs\python\python37\lib\site-packages\pyinstaller-4.0+19fb799a11-py3.7.egg\PyInstaller\hooks\rthooks\pyi_rth_django.py
