@@ -85,13 +85,18 @@ def download_pyi():
     url = "https://github.com/pyinstaller/pyinstaller/archive/v4.0.zip"
     pyi = os.path.join(tempfile.gettempdir(), "pyi.zip")
 
-    # r = requests.get(url,stream=True)
-    # logger.info("Downloading pyinstaller v4.0")    
+    r = requests.get(url,stream=True)
+    logger.info("Downloading pyinstaller v4.0")    
 
-    # with open(pyi, 'wb') as fd:
-    #     for chunk in r.iter_content(chunk_size=128):
-    #         fd.write(chunk)
+    with open(pyi, 'wb') as fd:
+        for chunk in r.iter_content(chunk_size=128):
+            fd.write(chunk)
     
+    logger.info("Trying to remove old content")    
+    try:
+        os.remove(os.path.join(tempfile.gettempdir(), "pyinstaller"))
+    except Exception as e :
+        logger.warning(e)
     logger.info("Unzipping pyinstaller")    
 
     try:
@@ -144,9 +149,11 @@ def replace_icon(folder):
    
 
 def rename_folder(folder,replacement):
+    try:
+        os.rename(os.path.join(folder,"Pyinstaller"),os.path.join(folder,replacement))
+    except Exception as e :
+        logger.warning(e)
 
-    os.rename(os.path.join(folder,"Pyinstaller"),os.path.join(folder,replacement))
-    
 
 def add_link_flags(folder):
 
@@ -163,6 +170,17 @@ def add_link_flags(folder):
         for line in fw:
                     print(line.replace(replace, replacement), end='')
     
+
+def build_bootloader(folder):
+    bootloader_folder = os.path.join(folder, "bootloader")
+    
+    os.system("cd "+bootloader_folder+"&python waf all")
+
+def make_setup(folder):
+    try:
+        os.system("cd "+folder+"&python setup.py install")
+    except Exception as e:
+        logger.error(e)
 
 def rename_pyi(replace_strings):
 
@@ -206,9 +224,11 @@ def rename_pyi(replace_strings):
     
     files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(folder) for f in filenames ]
 
-    rename_folder(folder,replace_strings.pyinstaller_string)
+    build_bootloader(folder)
     
+    rename_folder(folder,replace_strings.pyinstaller_string)
 
+    make_setup(folder)
 
 if __name__ == '__main__':
     
