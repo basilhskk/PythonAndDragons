@@ -51,11 +51,7 @@ def arg_parser():
     parser = argparse.ArgumentParser(description="Pythons and Dragons Pyinstaller static analysis evasion tool ",epilog=usage_text,formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument('-s','--string', type=str, help='String to replace detectable strings (eg. pyi pyinstaller etc.) (Default: Random)')
-
-    parser.add_argument('-i','--icon', type=str, help='Icon path for the executable (Default: Random)')
     
-    parser.add_argument('-p','--path', type=str, help='Where to create pyinstaller directory (Default: home of current user)')
-
     args = parser.parse_args()
 
     return args
