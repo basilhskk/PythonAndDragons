@@ -2,7 +2,7 @@
 # Pythons and Dragons Pyinstaller evasion tool
 
 ## Project Description 
-This project is the PoC of On Pythons and Dragons: Developing Stealth andEvasive Malware paper. 
+This project is the PoC of On Python and Malware: Developing Stealth and Evasive Malware Without Obfuscation. 
 
 
 ### Requirements
