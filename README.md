@@ -2,8 +2,7 @@
 # Pythons and Dragons Pyinstaller evasion tool
 
 ## Project Description 
-This project is the PoC of On Python and Malware: Developing Stealth and Evasive Malware Without Obfuscation. 
-
+[This project is the PoC of On Python and Malware: Developing Stealth and Evasive Malware Without Obfuscation.](https://arxiv.org/abs/2105.00565)
 
 ### Requirements
 ```python
@@ -13,7 +12,7 @@ python3 -m pip install -r requirements.txt
 ## PnD script
 
 ### Decscription 
-This script downloads and customize pyinstaller as the Python and Dragons paper describes to make it stealth.
+This script downloads and customize pyinstaller as the paper describes to make it stealth.
 
 ### Run 
 ```python
